@@ -4,7 +4,7 @@ import com.demo.transferMoney.Repository.AccountRepository;
 import com.demo.transferMoney.builder.ResponseBuilder;
 import com.demo.transferMoney.domain.Request;
 import com.demo.transferMoney.domain.Response;
-import com.demo.transferMoney.exception.AccountNotFoundException;
+import com.demo.transferMoney.exception.TransferMoneyException;
 import com.demo.transferMoney.model.Account;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,10 +25,14 @@ public class TransferService {
        Optional<Account> accountSource = accountRepository.findById(request.getAccountSource());
        Optional<Account> accountDestination = accountRepository.findById(request.getAccountDestination());
        List<Response> responseList = null;
-       if(accountSource.isPresent() && accountDestination.isPresent() && !(accountSource.get().getBalance().compareTo(BigDecimal.ZERO) == 0)){
+       if(accountSource.isPresent() && accountDestination.isPresent() &&
+               !accountSource.get().getBalance().equals(BigDecimal.ZERO) &&
+               !transferAmount.equals(BigDecimal.ZERO)){
            BigDecimal accountSourceBalance = accountSource.get().getBalance();
            BigDecimal accountDestinationBalance = accountDestination.get().getBalance();
-
+           if(accountSourceBalance.subtract(transferAmount).compareTo(BigDecimal.ZERO) <0){
+              throw new TransferMoneyException(String.format("Not enough balance in account %s",accountSource.get().getAccountNumber()));
+           }
            accountSource.get().setBalance(accountSourceBalance.subtract(transferAmount));
            accountDestination.get().setBalance(accountDestinationBalance.add(transferAmount));
            accountRepository.save(accountSource.get());
@@ -52,14 +56,17 @@ public class TransferService {
 
        } else{
            if(!accountSource.isPresent())
-           throw new AccountNotFoundException(String.format
+           throw new TransferMoneyException(String.format
                    ("Account Doesn't exist %s",String.valueOf(request.getAccountSource())));
            else if(!accountDestination.isPresent()){
-               throw new AccountNotFoundException(String.format
+               throw new TransferMoneyException(String.format
                        ("Account Doesn't exist %s",String.valueOf(request.getAccountDestination())));
-           }else if(accountSource.get().getBalance().compareTo(BigDecimal.ZERO) == 0){
-               throw new AccountNotFoundException(String.format
+           }else if(accountSource.get().getBalance().equals(BigDecimal.ZERO)){
+               throw new TransferMoneyException(String.format
                        ("Account balance is zero in %s",String.valueOf(request.getAccountSource())));
+           }else if(transferAmount.equals(BigDecimal.ZERO)){
+               throw new TransferMoneyException(String.format
+                       ("Transfer amount can't be zero in %s",String.valueOf(transferAmount)));
            }
        }
        return responseList;
