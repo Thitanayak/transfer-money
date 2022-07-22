@@ -4,6 +4,8 @@ import com.demo.transferMoney.domain.Request;
 import com.demo.transferMoney.domain.Response;
 import com.demo.transferMoney.exception.TransferMoneyException;
 import com.demo.transferMoney.service.TransferService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,8 @@ import java.util.List;
 @RequestMapping("/api")
 public class TransferController {
 
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
     @Autowired
     TransferService transferService;
 
@@ -28,6 +32,7 @@ public class TransferController {
         Error error = null;
         if(ex instanceof TransferMoneyException){
              error = new Error(HttpStatus.NOT_FOUND, ex.getLocalizedMessage(),ex.getLocalizedMessage());
+             logger.error(ex.getLocalizedMessage(),ex);
         }
         else if(ex instanceof HttpMessageNotReadableException){
             error = new Error(HttpStatus.UNPROCESSABLE_ENTITY, "Malformed json please refer api doc",ex.getLocalizedMessage());
@@ -42,6 +47,8 @@ public class TransferController {
 
     @PostMapping("/transferMoney")
     public ResponseEntity<List<Response>> transferMoney( @RequestBody Request request){
+        logger.info("Api call transferMoney started");
         return new ResponseEntity<>(transferService.transferMoney(request), HttpStatus.OK);
+
     }
 }

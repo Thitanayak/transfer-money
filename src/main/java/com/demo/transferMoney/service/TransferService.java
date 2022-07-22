@@ -6,6 +6,8 @@ import com.demo.transferMoney.domain.Request;
 import com.demo.transferMoney.domain.Response;
 import com.demo.transferMoney.exception.TransferMoneyException;
 import com.demo.transferMoney.model.Account;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +18,7 @@ import java.util.Optional;
 
 @Service
 public class TransferService {
-
+   Logger logger = LoggerFactory.getLogger(this.getClass());
     @Autowired
     AccountRepository accountRepository;
 
@@ -61,14 +63,15 @@ public class TransferService {
            else if(!accountDestination.isPresent()){
                throw new TransferMoneyException(String.format
                        ("Account Doesn't exist %s",String.valueOf(request.getAccountDestination())));
-           }else if(accountSource.get().getBalance().equals(BigDecimal.ZERO)){
+           }else if(accountSource.get().getBalance().compareTo(BigDecimal.ZERO) == 0){
                throw new TransferMoneyException(String.format
                        ("Account balance is zero in %s",String.valueOf(request.getAccountSource())));
-           }else if(transferAmount.equals(BigDecimal.ZERO)){
+           }else if(transferAmount.compareTo(BigDecimal.ZERO) == 0){
                throw new TransferMoneyException(String.format
                        ("Transfer amount can't be zero in %s",String.valueOf(transferAmount)));
            }
        }
+       logger.info("Api call transferMoney ended");
        return responseList;
    }
 }
